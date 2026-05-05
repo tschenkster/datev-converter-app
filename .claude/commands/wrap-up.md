@@ -1,4 +1,4 @@
-End-of-session wrap-up. Run all 8 steps below in order.
+End-of-session wrap-up. Run all steps below in order.
 
 ## Step 1: Run Tests
 
@@ -28,17 +28,25 @@ Do not sweep the whole workspace. Commit only the repos that were actually touch
 
 **Never commit:** the workspace root itself (Google-Drive-synced, not a git repo) or anything under `~/.claude/`.
 
-## Step 3: Deploy to Vercel
+## Step 3: Deploy to Vercel (if applicable)
 
-- This project auto-deploys from GitHub on push to `main`. The push in Step 2 already triggered deployment.
-- Say "Deploy: auto-deploys on push — no action needed" and move on.
+- Check if this project has a `vercel.json` or `.vercel/` directory.
+- If not, skip — say "Deploy: not a Vercel project" and move on.
+- Check the project's AGENTS.md for deployment method:
+  - If **auto-deploy from GitHub** is configured, say "Deploy: auto-deploys on push — no action needed" and move on.
+  - If **manual CLI deploy**, run `vercel --yes --prod`.
+- If the deploy fails, stop and tell the user — do NOT retry automatically.
 
 ## Step 4: Update Tracker (if useful)
 
 - Read `_tracker.md` and review what was done this session (from the commits and git log).
-- **Move completed items** from "Next" to "Done" with today's date.
-- **Add new items** discovered during the session to "Next" or "Ideas".
-- **Reprioritize "Next"** if the session changed what matters most.
+- **Move completed items** from "Next" to "Done" with today's date. **Add new items** discovered this session to "Next" or "Ideas". **Reprioritize "Next"** if the session changed what matters most.
+- **Entry style — match a git commit subject line:** one line, under ~80 characters, imperative or past-tense, no multi-sentence explanations, no "Verified: ..." tails, no architecture context. If it wouldn't fit on `git log --oneline`, it's too long.
+  - Good: `- [x] 2026-04-21: Add SSO login flow to triage app`
+  - Good: `- [x] 2026-04-21: Fix Cloud Run 502 cold-start on /classify`
+  - Bad: `- [x] Email Triage v1 — M1 auth hardening: App-layer auth via Supabase /auth/v1/user introspection in _shared/verify-token.js, wired checkAuth() into 3 Cloud Run handlers, PGPASSWORD moved to Secret Manager. Verified: invalid token → 401. (2026-04-21)`
+- If a change genuinely needs longer context, write it to memory or the commit message — the tracker is a changelog, not a narrative.
+- **Size cap ~100 lines.** Before adding new entries, `wc -l _tracker.md`. If over 100, collapse older multi-line Done entries to one-liners (or fold pure-scaffolding entries into a single "Project scaffolding (YYYY-MM-DD)" line) until back under the cap. Do not delete history — `git log` is the durable record.
 - **Skip** if nothing in the plan changed. Say "Tracker: no update needed" and move on.
 
 ## Step 5: Update PRD (if useful)
@@ -68,13 +76,28 @@ Do not sweep the whole workspace. Commit only the repos that were actually touch
   - Confirmed approaches the user validated - also feedback memories
   - New tools, projects, or conventions established - user/project memories
   - Non-obvious gotchas that will recur - project/reference memories
+  - **Process / order-of-operations lessons** — was there a check, search, or tool ("look at the bug tracker," "read the changelog," "run the existing diagnostic") that would have collapsed this session from hours into minutes if done first? If yes, write a feedback memory naming the check and when to apply it. The honest "we wasted X% of the day because we didn't do Y first" critiques you give the user during the session ARE memory candidates — translate them from prose into entries.
 - Apply the **recurrence test**: "Will a future session need this fact?" If no, don't write.
 - **Never write:**
   - One-time fixes already applied (config typos, resolved migrations)
-  - Info that lives in files future sessions will read anyway (AGENTS.md, CLAUDE.md, _tracker.md)
-  - Task status or backlog items (those go in _tracker.md)
+  - Info that lives in files future sessions will read anyway (AGENTS.md, CLAUDE.md, \_tracker.md)
+  - Task status or backlog items (those go in \_tracker.md)
 - **Clean up:** If any existing memories have been resolved by structural fixes (code changes, template updates), delete them.
 - If nothing passes the recurrence test, say "Memory: reviewed session - no new learnings to persist" and move on.
+
+## Step 7.5: Tooling + cross-repo audit
+
+Run `claude-toolings check`. This single command surfaces three concerns at once:
+
+- **Tool registry drift** — orphans (script on disk but not in `15-tools/REGISTRY.md`), ghosts (registry row whose executable is missing), stale entries (`Last tested` > 90 days ago), and any pending RUNBOOKs.
+- **Scheduled jobs** — `com.thomas.*` / `de.cfoteam.*` / `com.thomasschenkelberg.*` plists currently loaded in `launchctl`, plus any user crontab entries.
+- **Cross-repo pending work** — repos under `<workspace>` whose last commit is older than 7 days OR which have more than 10 uncommitted files (delegates to `scan-pending-work --json`).
+
+If anything is flagged, surface a one-line summary per repo / item to the user — do **not** auto-fix. The user decides whether to address now or defer.
+
+If the command exits 0 (all clean), say "Tooling audit: clean" and move on.
+
+If `claude-toolings` is not installed (e.g., on a fresh machine that hasn't run the rename + registry installer), say so and skip — do not attempt to install.
 
 ## Step 8: Update CLAUDE.md (if useful)
 
@@ -84,11 +107,13 @@ Do not sweep the whole workspace. Commit only the repos that were actually touch
   - New naming conventions or rules were established
   - New domain concepts need documenting
   - Architecture structure changed
-- Do NOT duplicate information that already lives in AGENTS.md, _tracker.md, or Memory.
+- Do NOT duplicate information that already lives in AGENTS.md, \_tracker.md, or Memory.
 - **Skip** for most sessions. Say "CLAUDE.md: no update needed" and move on.
 
 ## Summary
 
 After all steps, give a brief summary:
-- What was committed and pushed per touched repo (and whether it was deployed to Vercel)
+
+- What was committed and pushed per touched repo (and whether any project was deployed to Vercel)
 - Which files were updated (Tracker, PRD, AGENTS.md, Memory, CLAUDE.md) and why, or that they were skipped
+- Tooling audit result (clean / N items flagged) from Step 7.5
