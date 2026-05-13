@@ -28,6 +28,13 @@ Do not sweep the whole workspace. Commit only the repos that were actually touch
 
 **Never commit:** the workspace root itself (Google-Drive-synced, not a git repo) or anything under `~/.claude/`.
 
+## Step 2.5: Log background activations
+
+- Did this session wire up any **background activation** Thomas wouldn't remember in 6 months? Examples: a DNS record routing to a 3rd party (DMARC `rua=`, custom CNAME), a free monitoring/alerting service running silently (Postmark DMARC, uptime monitor, GCP budget alert), a webhook someone else's system calls on a schedule, a one-time policy change with long-tail effect (DMARC `p=quarantine` → `p=reject`), or a trial that auto-renews.
+- **Skip** daily-use services Thomas would never forget (Anthropic, OpenAI, Gemini, Google Workspace, Fireflies, Vercel, Supabase, GCP project, n8n, Granola). They don't belong in the registry.
+- If a background activation occurred, append a row to `15-tools/REGISTRY-SERVICES.md` (Date / Activation / Cadence / Where to manage / Credentials). For cancellations, move the row to `## Tombstones`.
+- If none, say "Background activations: none" and move on.
+
 ## Step 3: Deploy to Vercel (if applicable)
 
 - Check if this project has a `vercel.json` or `.vercel/` directory.
@@ -89,7 +96,7 @@ Do not sweep the whole workspace. Commit only the repos that were actually touch
 
 Run `claude-toolings check`. This single command surfaces three concerns at once:
 
-- **Tool registry drift** — orphans (script on disk but not in `15-tools/REGISTRY.md`), ghosts (registry row whose executable is missing), stale entries (`Last tested` > 90 days ago), and any pending RUNBOOKs.
+- **Tool registry drift** — orphans (script on disk but not in `15-tools/REGISTRY-TOOLS.md`), ghosts (registry row whose executable is missing), stale entries (`Last tested` > 90 days ago), and any pending RUNBOOKs.
 - **Scheduled jobs** — `com.thomas.*` / `de.cfoteam.*` / `com.thomasschenkelberg.*` plists currently loaded in `launchctl`, plus any user crontab entries.
 - **Cross-repo pending work** — repos under `<workspace>` whose last commit is older than 7 days OR which have more than 10 uncommitted files (delegates to `scan-pending-work --json`).
 
